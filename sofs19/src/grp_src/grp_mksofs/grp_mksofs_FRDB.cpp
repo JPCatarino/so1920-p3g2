@@ -23,7 +23,7 @@ namespace sofs19
                 uint32_t dBlock[RPB];
 
                 if(i < nbref)
-                    dBlock[0] = i + 1; // Reference to next block on the first space of each reference block.
+                    dBlock[0] = (usedBlocks+i) + 1; // Reference to next block on the first space of each reference block.
                 else
                     dBlock[0] = NullReference; // Only applies to the last reference block.
                 
