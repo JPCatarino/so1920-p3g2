@@ -14,7 +14,8 @@ namespace sofs19
         soProbe(605, "%s(%u, %u, %u)\n", __FUNCTION__, ntotal, itotal, nbref);
 
         if(nbref > 0){
-            uint32_t freeDBlocks = ntotal - (itotal / IPB) - nbref - 1; // Calculate the free data blocks (Total - InodeBlocks - RefBlocks - root)
+            uint32_t usedBlocks = (itotal / IPB) + 1;
+            uint32_t freeDBlocks = ntotal - usedBlocks - nbref; // Calculate the free data blocks (Total - InodeBlocks - RefBlocks - root)
             uint32_t currentRef = HEAD_CACHE_SIZE + nbref + 1; // Calculate the next reference to be written
             
             // Iterates each available reference block, to fill it.
@@ -36,7 +37,7 @@ namespace sofs19
                         dBlock[z] = NullReference;
                     }
                 }
-                soWriteRawBlock(i, &dBlock);
+                soWriteRawBlock(usedBlocks + i, &dBlock);
             }
         }
         return;
