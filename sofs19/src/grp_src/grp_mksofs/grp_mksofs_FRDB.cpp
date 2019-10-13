@@ -15,7 +15,8 @@ namespace sofs19
 
         if(nbref > 0){
             uint32_t usedBlocks = (itotal / IPB) + 1;
-            uint32_t freeDBlocks = ntotal - usedBlocks - nbref; // Calculate the free data blocks (Total - InodeBlocks - RefBlocks - root)
+            uint32_t totalDBlocks = ntotal - usedBlocks; // Calcuate the total free datablocks
+            //uint32_t freeDBlocks = totalDBlocks - nbref; // Calculate the free unused data blocks (Total - InodeBlocks - RefBlocks - root)
             uint32_t currentRef = HEAD_CACHE_SIZE + nbref + 1; // Calculate the next reference to be written
             
             // Iterates each available reference block, to fill it.
@@ -29,7 +30,7 @@ namespace sofs19
                 
                 // Fills the current block. If currentRef is higher than available free blocks, fills the remaining available spaces with NullReferences.
                 for(uint32_t z = 1; z <= RPB - 1; z++){
-                    if(currentRef < freeDBlocks){
+                    if(currentRef < totalDBlocks){
                         dBlock[z] = currentRef;
                         currentRef++;
                     }
