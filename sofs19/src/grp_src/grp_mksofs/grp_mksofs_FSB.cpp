@@ -21,24 +21,62 @@ namespace sofs19
         sb.mntcnt = 0; // how many times has it been mounted
         sb.ntotal = ntotal; // total number of blocks in device
         sb.itotal = itotal; // total number of inodes
-        sb.it_size = itotal / IPB; // how many blocks for inodes
+        sb.it_size = ceil(itotal / IPB); // how many blocks for inodes
         sb.ifree = itotal - 1; // how many free inodes
         sb.ihead = 1; // first free inode
-        sb.itail = itotal - 1; // last free inode
-        sb.dz_start = sb.it_size + 1; // physical block where data blocks begin
+        sb.itail = sb.ifree; // last free inode
+        sb.dz_start = sb.it_size + 1; // physical block where data blocks begin (number of inode blocks + superblock)
         sb.dz_total = ntotal - sb.it_size - 1; // -1 == superblock // total number of data blocks
-        sb.dz_free = sb.dz_total - 1;
-        uint32_t refblocks = ceil(sb.dz_total / RPB); // how many blocks we need to store data blocks references
-        sb.head_blk = sb.it_size + 2; // 0 is for superblock + 1 for root
-        sb.tail_blk = refblocks+1; // accounting for the root
+        sb.dz_free = sb.dz_total - nbref - 1;   // from the total number of datablocks remove how many blocks needed for references and one for root block
+
+        if(sb.dz_free<=HEAD_CACHE_SIZE){  // if free data blocks is less than head cache size
+            sb.head_blk = NullReference;
+            sb.tail_blk = NullReference;
+            sb.head_idx = NullReference;
+            sb.tail_idx = NullReference; // there are no reference blocks because everything is in cache
+            sb.head_cache.idx = HEAD_CACHE_SIZE - sb.dz_free; // where does the cache begin
+            uint32_t j = 1;
+            for(uint32_t i = 0; i<= HEAD_CACHE_SIZE; i++){
+                if(i >= sb.head_cache.idx){
+                    sb.head_cache.ref[i] = j;
+                    j++;
+                }
+                else{
+                    sb.head_cache.ref[i] = NullReference; // needed because everything is 0 unless i force it to be NullReference
+                }
+
+            }
+        }else{
+            sb.tail_blk = nbref;
+            sb.head_blk = 1;
+            sb.head_idx = 1;
+            uint32_t freerefs = ((sb.dz_free - HEAD_CACHE_SIZE) % (RPB-1)); // RPB is 256 but can only put 255 references
+            if(freerefs<RPB-1) {
+                sb.tail_idx = freerefs + 1;
+            }
+            if(freerefs == 0){
+                sb.tail_idx = RPB;
+            }
 
 
+            sb.head_cache.idx = 0;
+            for(uint32_t i = 0; i <= HEAD_CACHE_SIZE; i++){
+                sb.head_cache.ref[i] = (i+1) + nbref;
+            }
+        }
 
 
+        sb.tail_cache.idx = 0;
+        for (uint32_t i = 0; i <= TAIL_CACHE_SIZE; i++){
+            sb.tail_cache.ref[i] = NullReference;
+        }
+
+        soWriteRawBlock(0, &sb);
 
 
         /* change the following line by your code */
-        binFillSuperBlock(name, ntotal, itotal, nbref);
+        //binFillSuperBlock(name, ntotal, itotal, nbref);
     }
+
 };
 
