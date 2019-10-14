@@ -22,9 +22,9 @@ namespace sofs19
 
         //first two entries
         dir[0].in=0x00000000;
-        dir[0].name[0]='.';
+        strcpy(dir[0].name, ".");
         dir[1].in=0x00000000;
-        dir[1].name[0]='..';
+        strcpy(dir[1].name, "..");
 
         //rest of the blocks
         for(uint32_t i=2; i<DPB; i++) {
