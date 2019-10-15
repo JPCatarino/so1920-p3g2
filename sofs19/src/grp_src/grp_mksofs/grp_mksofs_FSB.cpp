@@ -50,13 +50,10 @@ namespace sofs19
             sb.tail_blk = nbref;
             sb.head_blk = 1;
             sb.head_idx = 1;
-            uint32_t freerefs = ((sb.dz_free - HEAD_CACHE_SIZE) % (RPB-1)); // RPB is 256 but can only put 255 references
-            if(freerefs<RPB-1) {
-                sb.tail_idx = freerefs + 1;
-            }
-            if(freerefs == 0){
-                sb.tail_idx = RPB;
-            }
+            uint32_t totalrefs = (sb.dz_free - HEAD_CACHE_SIZE);
+            uint32_t refs_up_to_lastBlock = (RPB - 1) * (nbref - 1);
+            uint32_t to_fill = totalrefs - refs_up_to_lastBlock;
+            sb.tail_idx = to_fill + 1;
 
 
             sb.head_cache.idx = 0;
