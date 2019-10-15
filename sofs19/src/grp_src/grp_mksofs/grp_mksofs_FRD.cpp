@@ -39,7 +39,7 @@ namespace sofs19
         soWriteRawBlock(usedBlocks,dir);
 
         /* change the following line by your code */
-        return binFillRootDir(itotal);
+        //return binFillRootDir(itotal);
     }
 };
 
