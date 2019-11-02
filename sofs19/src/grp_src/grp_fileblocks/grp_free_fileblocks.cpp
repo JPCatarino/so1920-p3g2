@@ -115,7 +115,9 @@ namespace sofs19
                 if(i2RefBlock[i] != NullReference) isEmpty = false;
             }
         }
-    return  isEmpty;
+        
+        soWriteDataBlock(i2, &i2RefBlock);
+        return isEmpty;
     }
 
 
