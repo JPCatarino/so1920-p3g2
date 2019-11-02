@@ -35,6 +35,13 @@ namespace sofs19
 
     /* ********************************************************* */
 
+    /* Helpful formulas
+    * i1 index = fbn / RPB
+    * i1 Ref Pos = fbn % RPB
+    * i2 index = fbn / RPB ^ 2
+    * i2 Ref Pos = fbn / RPB  - (i2index * RPB)
+    */
+
     void grpFreeFileBlocks(int ih, uint32_t ffbn)
     {
         soProbe(303, "%s(%d, %u)\n", __FUNCTION__, ih, ffbn);
