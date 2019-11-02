@@ -85,7 +85,7 @@ namespace sofs19
 
     /* ********************************************************* */
 
-#if false
+
     static bool grpFreeDoubleIndirectFileBlocks(SOInode * ip, uint32_t i2, uint32_t ffbn)
     {
         soProbe(303, "%s(..., %u, %u)\n", __FUNCTION__, i2, ffbn);
@@ -95,12 +95,29 @@ namespace sofs19
         // Read i2 datablock to array
         uint32_t i2RefBlock[RPB];
         soReadDataBlock(i2, &i2RefBlock);
+
+        // Get starting index
+        uint32_t ffbnIndexI2 = ffbn / pwRPB;
+
         for(uint32_t i = 0; i < RPB; i++){
-
+            // Verifies if i is inside interval of [ffbnI2, RPB**2 - 1]
+            if(i >= ffbnIndexI2){
+                if(i2RefBlock[i] != NullReference){
+                    // Get the position to be removed from referenced data block
+                    uint32_t ffbnRefPosI2 = (ffbn/RPB) - (i*RPB);
+                    // if i1 block is empty, free the datablock
+                    if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], ffbnRefPosI2)) 
+                        soFreeDataBlock(i2RefBlock[i]);
+                    i2RefBlock[i] = NullReference;
+                }
+            }
+            else{
+                if(i2RefBlock[i] != NullReference) isEmpty = false;
+            }
         }
-
+    return  isEmpty;
     }
-#endif
+
 
     /* ********************************************************* */
 };
