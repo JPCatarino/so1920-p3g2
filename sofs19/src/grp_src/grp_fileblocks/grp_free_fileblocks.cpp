@@ -11,7 +11,7 @@
 
 namespace sofs19
 {
-#if false
+
     /* free all blocks between positions ffbn and RPB - 1
      * existing in the block of references given by i1.
      * Return true if, after the operation, all references become NullReference.
@@ -25,7 +25,7 @@ namespace sofs19
      * It assumes i2 is valid.
      */
     static bool grpFreeDoubleIndirectFileBlocks(SOInode * ip, uint32_t i2, uint32_t ffbn);
-#endif
+
 
     /* ********************************************************* */
 
@@ -39,15 +39,36 @@ namespace sofs19
 
     /* ********************************************************* */
 
-#if false
+
     static bool grpFreeIndirectFileBlocks(SOInode * ip, uint32_t i1, uint32_t ffbn)
     {
         soProbe(303, "%s(..., %u, %u)\n", __FUNCTION__, i1, ffbn);
 
-        /* change the following line by your code */
-        throw SOException(ENOSYS, __FUNCTION__); 
+        // Assume the block will be completely empty
+        bool isEmpty = true;
+
+        // Read i1 datablock to array
+        uint32_t i1RefBlock[RPB];
+        soReadDataBlock(i1, &i1RefBlock);
+        
+        for (uint32_t i = 0; i < RPB; i++){
+            // Only change blocks to null after the ffbn (first fb number)
+            if(i>=ffbn){
+                if(i1RefBlock[i] != NullReference){
+                    soFreeDataBlock(i1RefBlock[i]);     // Free datablock used by fileblock
+                    i1RefBlock[i] = NullReference;      // Set the reference to null
+                }
+            }
+            // If not inside the interval, check if the block is null
+            else{
+                if(i1RefBlock[i] != NullReference) isEmpty = false;
+            }
+        }
+
+        soWriteDataBlock(i1, &i1RefBlock);              // Write ref block after cleaning to i1
+        return isEmpty;
     }
-#endif
+
 
     /* ********************************************************* */
 
