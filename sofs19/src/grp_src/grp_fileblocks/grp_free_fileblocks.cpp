@@ -26,6 +26,12 @@ namespace sofs19
      */
     static bool grpFreeDoubleIndirectFileBlocks(SOInode * ip, uint32_t i2, uint32_t ffbn);
 
+    // RPB ^ 2
+    static uint32_t pwRPB = RPB * RPB;
+
+    // Max FB number in sofs19
+    static uint32_t maxFBN = N_DIRECT + (N_INDIRECT * RPB) + (N_DOUBLE_INDIRECT * pwRPB);
+
 
     /* ********************************************************* */
 
@@ -76,9 +82,16 @@ namespace sofs19
     static bool grpFreeDoubleIndirectFileBlocks(SOInode * ip, uint32_t i2, uint32_t ffbn)
     {
         soProbe(303, "%s(..., %u, %u)\n", __FUNCTION__, i2, ffbn);
+        // Assume the block will be completely empty
+        bool isEmpty = true;
 
-        /* change the following line by your code */
-        throw SOException(ENOSYS, __FUNCTION__); 
+        // Read i2 datablock to array
+        uint32_t i2RefBlock[RPB];
+        soReadDataBlock(i2, &i2RefBlock);
+        for(uint32_t i = 0; i < RPB; i++){
+
+        }
+
     }
 #endif
 
