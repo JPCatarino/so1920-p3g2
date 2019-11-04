@@ -50,7 +50,7 @@ namespace sofs19
     
 
         /* change the following line by your code */
-        binRenameDirEntry(pih, name, newName);
+        //binRenameDirEntry(pih, name, newName);
     }
 };
 
