@@ -32,6 +32,9 @@ namespace sofs19
     // Max FB number in sofs19
     static uint32_t maxFBN = N_DIRECT + (N_INDIRECT * RPB) + (N_DOUBLE_INDIRECT * pwRPB);
 
+    // Max value of i1 / first value of i2
+    static uint32_t i2FirstValue = N_DIRECT * (N_INDIRECT * RPB);
+
 
     /* ********************************************************* */
 
@@ -46,8 +49,31 @@ namespace sofs19
     {
         soProbe(303, "%s(%d, %u)\n", __FUNCTION__, ih, ffbn);
 
-        /* change the following line by your code */
-        binFreeFileBlocks(ih, ffbn);
+        SOInode* ip = soGetInodePointer(ih);
+        
+        // Check if ffbn is invalid
+        if(ffbn < 0 || ffbn >= maxFBN)
+            throw SOException(EINVAL, __FUNCTION__);
+        // if ffbn is in direct
+        else if (ffbn < N_DIRECT){                 
+            uint32_t delBlockCount = 0;
+            for(; ffbn < N_DIRECT; ffbn++){
+                if(ip->d[ffbn] != NullReference)
+                    delBlockCount++;
+                ip->d[ffbn] = NullReference;
+            }
+            ip->blkcnt -= delBlockCount;
+        }
+        // if ffbn is indirect
+        else if(ffbn >= N_DIRECT && ffbn < i2FirstValue){
+            grpFreeIndirectFileBlocks(ip, ip->i1, ffbn);
+            ffbn = i2FirstValue;
+        }
+        // if ffbn is double indirect
+        else{
+        }
+
+        soSaveInode(ih);
     }
 
     /* ********************************************************* */
@@ -90,6 +116,7 @@ namespace sofs19
             }
 
             if(isEmpty){
+                soFreeDataBlock(i1[i]);
                 i1[i] = NullReference;
                 delBlockCount++;
             }
