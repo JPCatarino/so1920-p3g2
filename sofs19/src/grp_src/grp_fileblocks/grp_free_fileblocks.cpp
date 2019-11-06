@@ -33,7 +33,7 @@ namespace sofs19
     static uint32_t maxFBN = N_DIRECT + (N_INDIRECT * RPB) + (N_DOUBLE_INDIRECT * pwRPB);
 
     // Max value of i1 / first value of i2
-    static uint32_t i2FirstValue = N_DIRECT * (N_INDIRECT * RPB);
+    static uint32_t i2FirstValue = N_DIRECT + (N_INDIRECT * RPB);
 
 
     /* ********************************************************* */
@@ -66,35 +66,39 @@ namespace sofs19
         // if ffbn is indirect
         if(ffbn >= N_DIRECT && ffbn < i2FirstValue){
             uint32_t i1index = ((ffbn - N_DIRECT) / RPB);
+
             for(uint32_t i = i1index; i < N_INDIRECT; i++){
                 if(i == i1index){
-                    if(grpFreeIndirectFileBlocks(ip, i, ffbn - N_DIRECT)){
+                    if(grpFreeIndirectFileBlocks(ip, ip->i1[i], ffbn - N_DIRECT)){
                         soFreeDataBlock(ip->i1[i]);
                         ip->i1[i] = NullReference;
                     }
                 }
                 else{
-                    if(grpFreeIndirectFileBlocks(ip, i, 0)){
+                    if(grpFreeIndirectFileBlocks(ip, ip->i1[i], 0)){
                         soFreeDataBlock(ip->i1[i]);
                         ip->i1[i] = NullReference;
                     }
-                }
+                 }
             }
             ffbn = i2FirstValue;
+
         }
+
         
         // if ffbn is double indirect
         if(ffbn >= i2FirstValue && ffbn < maxFBN){
             uint32_t i2index = (ffbn - i2FirstValue) / pwRPB;
+
             for(uint32_t i = i2index; i < N_DOUBLE_INDIRECT; i++){
                 if(i == i2index){
-                    if(grpFreeDoubleIndirectFileBlocks(ip, i, ffbn - i2FirstValue)){
+                    if(grpFreeDoubleIndirectFileBlocks(ip, ip->i2[i], ffbn - i2FirstValue)){
                         soFreeDataBlock(ip->i2[i]);
                         ip->i2[i] = NullReference;
                     }
                 }
                 else{
-                    if(grpFreeDoubleIndirectFileBlocks(ip, i, 0)){
+                    if(grpFreeDoubleIndirectFileBlocks(ip, ip->i2[i], 0)){
                         soFreeDataBlock(ip->i2[i]);
                         ip->i2[i] = NullReference;
                     }
