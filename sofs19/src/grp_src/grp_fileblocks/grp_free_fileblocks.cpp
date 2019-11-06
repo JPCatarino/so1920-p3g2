@@ -64,12 +64,42 @@ namespace sofs19
             }
         }
         // if ffbn is indirect
-        else if(ffbn >= N_DIRECT && ffbn < i2FirstValue){
-            
+        if(ffbn >= N_DIRECT && ffbn < i2FirstValue){
+            uint32_t i1index = ((ffbn - N_DIRECT) / RPB);
+            for(uint32_t i = i1index; i < N_INDIRECT; i++){
+                if(i == i1index){
+                    if(grpFreeIndirectFileBlocks(ip, i, ffbn - N_DIRECT)){
+                        soFreeDataBlock(ip->i1[i]);
+                        ip->i1[i] = NullReference;
+                    }
+                }
+                else{
+                    if(grpFreeIndirectFileBlocks(ip, i, 0)){
+                        soFreeDataBlock(ip->i1[i]);
+                        ip->i1[i] = NullReference;
+                    }
+                }
+            }
+            ffbn = i2FirstValue;
         }
+        
         // if ffbn is double indirect
-        else{
-            //grpFreeDoubleIndirectFileBlocks(ip, ip->i2, ffbn);
+        if(ffbn >= i2FirstValue && ffbn < maxFBN){
+            uint32_t i2index = (ffbn - i2FirstValue) / pwRPB;
+            for(uint32_t i = i2index; i < N_DOUBLE_INDIRECT; i++){
+                if(i == i2index){
+                    if(grpFreeDoubleIndirectFileBlocks(ip, i, ffbn - i2FirstValue)){
+                        soFreeDataBlock(ip->i2[i]);
+                        ip->i2[i] = NullReference;
+                    }
+                }
+                else{
+                    if(grpFreeDoubleIndirectFileBlocks(ip, i, 0)){
+                        soFreeDataBlock(ip->i2[i]);
+                        ip->i2[i] = NullReference;
+                    }
+                }
+            } 
         }
 
         soSaveInode(ih);
@@ -88,6 +118,8 @@ namespace sofs19
         // Read i1 datablock to array
         uint32_t i1RefBlock[RPB];
         soReadDataBlock(i1, &i1RefBlock);
+
+        ffbn = ffbn % RPB;
 
         for (uint32_t i = 0; i < RPB; i++){
             // Only change blocks to null after the ffbn (first fb number)
@@ -132,7 +164,7 @@ namespace sofs19
                     ffbnRefPosI2 = 0;
                 else
                     ffbnRefPosI2 = ffbn - (i*RPB);
-                if(ffbnRefPosI2 == 0){
+                if(ffbnRefPosI2 == 0 || i != ffbnIndexI2){
                     if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], 0))
                         soFreeDataBlock(i2RefBlock[i]);
                 }
