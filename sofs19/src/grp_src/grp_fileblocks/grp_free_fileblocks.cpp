@@ -17,7 +17,7 @@ namespace sofs19
      * Return true if, after the operation, all references become NullReference.
      * It assumes i1 is valid.
      */
-    static void grpFreeIndirectFileBlocks(SOInode * ip, uint32_t * i1, uint32_t ffbn);
+    static bool grpFreeIndirectFileBlocks(SOInode * ip, uint32_t i1, uint32_t ffbn);
 
     /* free all blocks between positions ffbn and RPB**2 - 1
      * existing in the block of indirect references given by i2.
@@ -25,7 +25,7 @@ namespace sofs19
      * It assumes i2 is valid.
      */
     static bool grpFreeDoubleIndirectFileBlocks(SOInode * ip, uint32_t i2, uint32_t ffbn);
-
+    
     // RPB ^ 2
     static uint32_t pwRPB = RPB * RPB;
 
@@ -55,22 +55,21 @@ namespace sofs19
         if(ffbn < 0 || ffbn >= maxFBN)
             throw SOException(EINVAL, __FUNCTION__);
         // if ffbn is in direct
-        else if (ffbn < N_DIRECT){                 
-            uint32_t delBlockCount = 0;
+        if (ffbn < N_DIRECT){                 
             for(; ffbn < N_DIRECT; ffbn++){
-                if(ip->d[ffbn] != NullReference)
-                    delBlockCount++;
-                ip->d[ffbn] = NullReference;
+                if(ip->d[ffbn] != NullReference){
+                    soFreeDataBlock(ip->d[ffbn]);
+                    ip->d[ffbn] = NullReference;
+                }
             }
-            ip->blkcnt -= delBlockCount;
         }
         // if ffbn is indirect
         else if(ffbn >= N_DIRECT && ffbn < i2FirstValue){
-            grpFreeIndirectFileBlocks(ip, ip->i1, ffbn);
-            ffbn = i2FirstValue;
+            
         }
         // if ffbn is double indirect
         else{
+            //grpFreeDoubleIndirectFileBlocks(ip, ip->i2, ffbn);
         }
 
         soSaveInode(ih);
@@ -79,61 +78,39 @@ namespace sofs19
     /* ********************************************************* */
 
 
-    static void grpFreeIndirectFileBlocks(SOInode * ip, uint32_t* i1, uint32_t ffbn)
+    static bool grpFreeIndirectFileBlocks(SOInode * ip, uint32_t i1, uint32_t ffbn)
     {
         soProbe(303, "%s(..., %u, %u)\n", __FUNCTION__, i1, ffbn);
 
-        uint32_t delBlockCount = 0;
-
-        // Calculate I1 index of ffbn
-        uint32_t ffbnIndexI1 = (ffbn / RPB);
-
-        // Calculate I1 Pos
-        uint32_t ffbnRefPos = (ffbn % RPB);
-
-        uint32_t dBlock[RPB];
+        // Assume the block will be completely empty
         bool isEmpty = true;
 
-        // Start freeing from i1 index of ffbn to end of the list
-        for(uint32_t i = ffbnIndexI1; i < N_INDIRECT; i++){
-            if (i1[i] == NullReference)
-                continue;
+        // Read i1 datablock to array
+        uint32_t i1RefBlock[RPB];
+        soReadDataBlock(i1, &i1RefBlock);
 
-            soReadDataBlock(i1[i], &dBlock);
-
-            isEmpty = true;
-            for(uint32_t x = 0; x < RPB; x++){
-                // Start freeing from RefPos, and count the number of deleted blocks
-                if(x >= ffbnRefPos){
-                    if(dBlock[x] != NullReference)
-                        delBlockCount++;
-                    dBlock[x] = NullReference;
-                }
-                else{
-                    if (dBlock[x] != NullReference)
-                        isEmpty = false;
+        for (uint32_t i = 0; i < RPB; i++){
+            // Only change blocks to null after the ffbn (first fb number)
+            if(i>=ffbn){
+                if(i1RefBlock[i] != NullReference){
+                    soFreeDataBlock(i1RefBlock[i]);     // Free datablock used by fileblock
+                    i1RefBlock[i] = NullReference;      // Set the reference to null
                 }
             }
-
-            if(isEmpty){
-                soFreeDataBlock(i1[i]);
-                i1[i] = NullReference;
-                delBlockCount++;
+            // If not inside the interval, check if the block is null
+            else{
+                if(i1RefBlock[i] != NullReference) isEmpty = false;
             }
-            else
-                soWriteDataBlock(i1[i], &dBlock);
-
-            // set reference to 0 so I can delete next blocks on i2 from beginning
-            ffbnRefPos = 0;
         }
-        ip->blkcnt -= delBlockCount;
+
+        soWriteDataBlock(i1, &i1RefBlock);              // Write ref block after cleaning to i1
+        return isEmpty;
     }
 
 
     /* ********************************************************* */
 
-#if false
-    static bool grpFreeDoubleIndirectFileBlocks(SOInode * ip, uint32_t * i2, uint32_t ffbn)
+    static bool grpFreeDoubleIndirectFileBlocks(SOInode * ip, uint32_t i2, uint32_t ffbn)
     {
         soProbe(303, "%s(..., %u, %u)\n", __FUNCTION__, i2, ffbn);
         // Assume the block will be completely empty
@@ -144,29 +121,36 @@ namespace sofs19
         soReadDataBlock(i2, &i2RefBlock);
 
         // Get starting index
-        uint32_t ffbnIndexI2 = ffbn / pwRPB;
+        uint32_t ffbnIndexI2 = ffbn / RPB;
 
-        for(uint32_t i = 0; i < RPB; i++){
-            // Verifies if i is inside interval of [ffbnI2, RPB**2 - 1]
-            if(i >= ffbnIndexI2){
-                if(i2RefBlock[i] != NullReference){
-                    // Get the position to be removed from referenced data block
-                    uint32_t ffbnRefPosI2 = (ffbn/RPB) - (i*RPB);
-                    // if i1 block is empty, free the datablock
-                    if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], ffbnRefPosI2)) 
+        // Delete positions after starting index
+        for(uint32_t i = ffbnIndexI2; i < RPB; i++){
+            if(i2RefBlock[i] != NullReference){
+                // Get the position to be removed from referenced data block
+                uint32_t ffbnRefPosI2;
+                if (ffbn == 0)
+                    ffbnRefPosI2 = 0;
+                else
+                    ffbnRefPosI2 = ffbn - (i*RPB);
+                if(ffbnRefPosI2 == 0){
+                    if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], 0))
                         soFreeDataBlock(i2RefBlock[i]);
-                    i2RefBlock[i] = NullReference;
                 }
-            }
-            else{
-                if(i2RefBlock[i] != NullReference) isEmpty = false;
+                else if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], ffbnRefPosI2))
+                    soFreeDataBlock(i2RefBlock[i]);
             }
         }
-        
+
+        // Check if block is empty
+        for(uint32_t i = 0; i < RPB; i++){
+            if(i2RefBlock[i] != NullReference)
+                isEmpty = false;
+        }
+
         soWriteDataBlock(i2, &i2RefBlock);
         return isEmpty;
     }
-#endif
+
 
     /* ********************************************************* */
 };
