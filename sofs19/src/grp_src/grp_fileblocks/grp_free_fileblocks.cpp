@@ -165,13 +165,15 @@ namespace sofs19
                 else
                     ffbnRefPosI2 = ffbn - (i*RPB);
                 if(ffbnRefPosI2 == 0 || i != ffbnIndexI2){
-                    if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], 0))
+                    if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], 0)){
                         soFreeDataBlock(i2RefBlock[i]);
                         i2RefBlock[i] = NullReference;
+                    }
                 }
-                else if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], ffbnRefPosI2))
+                else if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], ffbnRefPosI2)){
                     soFreeDataBlock(i2RefBlock[i]);
                     i2RefBlock[i] = NullReference;
+                }
             }
         }
 
