@@ -167,9 +167,11 @@ namespace sofs19
                 if(ffbnRefPosI2 == 0 || i != ffbnIndexI2){
                     if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], 0))
                         soFreeDataBlock(i2RefBlock[i]);
+                        i2RefBlock[i] = NullReference;
                 }
                 else if(grpFreeIndirectFileBlocks(ip, i2RefBlock[i], ffbnRefPosI2))
                     soFreeDataBlock(i2RefBlock[i]);
+                    i2RefBlock[i] = NullReference;
             }
         }
 
