@@ -24,14 +24,14 @@ namespace sofs19
         /* change the following line by your code */
         //return binGetFileBlock(ih, fbn);
           SOInode *ip = soGetInodePointer(ih);
-            if (fbn < 4) return ip -> d[fbn];
-            else if (fbn <= ((2 * RPB) + 3))
+            if (fbn < N_DIRECT) return ip -> d[fbn];
+            else if (fbn <N_DIRECT+RPB)
             {
-              return grpGetIndirectFileBlock(ip,(fbn - 4));
+              return grpGetIndirectFileBlock(ip,fbn);
             }
             else
             {
-              return grpGetDoubleIndirectFileBlock(ip,(fbn - 260));
+              return grpGetDoubleIndirectFileBlock(ip,fbn);
             }
     }
 
@@ -60,17 +60,20 @@ namespace sofs19
         /* change the following two lines by your code */
         //throw SOException(ENOSYS, __FUNCTION__); 
         //return 0;
+        uint32_t temp;
         uint32_t ref[RPB];
-        uint32_t ref1[RPB];
-        soReadDataBlock(ip -> i2[afbn/(RPB*RPB)],ref);
-        uint32_t temp = afbn;
-        if (afbn > 16383)
-        {
-            temp = afbn - 16384;
+
+        if(ip -> i2[afbn/(RPB*RPB)] == NullReference){
+            return NullReference;
         }
-        soReadDataBlock(ref[temp/RPB],ref1);
-        return ref1[afbn%RPB];
+        else{
+            soReadDataBlock((ip -> i2[afbn/(RPB*RPB)]), ref);
+            temp = ref[afbn/(RPB - (afbn / RPB))];
+            if (temp == NullReference){
+                return NullReference;
+            } else {
+                soReadDataBlock(temp, ref);
+                return ref[afbn%RPB];
+            }
+        }
     }
-
-};
-
