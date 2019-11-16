@@ -28,11 +28,11 @@ namespace sofs19
             if (fbn < N_DIRECT) return ip -> d[fbn];
             else if (fbn < i2FirstValue)
             {
-              return grpGetIndirectFileBlock(ip,fbn);
+              return grpGetIndirectFileBlock(ip,fbn - N_DIRECT);
             }
             else
             {
-              return grpGetDoubleIndirectFileBlock(ip,fbn);
+              return grpGetDoubleIndirectFileBlock(ip,fbn - i2FirstValue);
             }
     }
 
