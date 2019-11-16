@@ -46,6 +46,10 @@ namespace sofs19
         //throw SOException(ENOSYS, __FUNCTION__); 
         //return 0;
         uint32_t ref[RPB];
+        if (ip->i1[afbn/RPB] == NullReference)
+            {
+                return NullReference;
+            }
         soReadDataBlock(ip -> i1[(afbn/RPB)],ref);
         return ref[afbn % RPB];
     }
