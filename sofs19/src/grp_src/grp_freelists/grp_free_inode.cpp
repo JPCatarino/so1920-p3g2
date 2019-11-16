@@ -19,8 +19,11 @@
 
 namespace sofs19
 {
-    void grpFreeInode(uint32_t in)
-    {
+
+	/*Free the referenced inode.
+	The inode is cleaned, marked as free, and inserted into the list of free inodes*/
+    void grpFreeInode(uint32_t in){
+
         soProbe(402, "%s(%u)\n", __FUNCTION__, in);
 
         //Ponteiro do SuperBlock
@@ -28,7 +31,7 @@ namespace sofs19
          
         //Caso a tail cache esteja cheia
 		if(sbp -> tail_cache.idx == TAIL_CACHE_SIZE){
-			sofs19::soDepleteTailCache();
+			soDepleteTailCache();
 		}
 		
 		//índice do inode que é para libertar é o que terá 'tail_cahce.idx++' index

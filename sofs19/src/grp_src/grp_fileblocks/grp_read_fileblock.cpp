@@ -10,8 +10,12 @@
 
 namespace sofs19
 {
-    void grpReadFileBlock(int ih, uint32_t fbn, void *buf)
-    {
+
+    /*Read a file block.
+    Data is read from a specific data block which is supposed to 
+    belong to an inode associated to a file (a regular file, a directory or a symbolic link)*/
+    void grpReadFileBlock(int ih, uint32_t fbn, void *buf){
+
         soProbe(331, "%s(%d, %u, %p)\n", __FUNCTION__, ih, fbn, buf);
 
          uint32_t bn = soGetFileBlock(ih, fbn);
