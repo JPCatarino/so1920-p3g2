@@ -24,7 +24,25 @@ namespace sofs19
         soProbe(441, "%s()\n", __FUNCTION__);
 
         /* change the following line by your code */
-        return binAllocDataBlock();
+        //return binAllocDataBlock();
+
+        SOSuperBlock* soSB = soGetSuperBlockPointer(); //ponteiro para o superbloco
+
+        //Se a head cache esta vazia, chama a replenish
+        if(soSB->head_idx == HEAD_CACHE_SIZE){
+            soReplenishHeadCache();
+        }
+
+        //vai a head cache e retira o primeiro elemento que lá está e atualiza o indice
+
+        soSB->head_cache.ref[HEAD_CACHE_SIZE] = NullReference;
+        soSB->dz_free -=1;
+        soSB->head_cache.idx +=1;
+
+
+        soSaveSuperBlock();
+
+        return soSB->head_cache.ref[HEAD_CACHE_SIZE];
     }
 };
 
