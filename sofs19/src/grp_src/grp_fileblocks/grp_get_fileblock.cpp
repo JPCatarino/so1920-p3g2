@@ -14,6 +14,7 @@ namespace sofs19
     static uint32_t grpGetIndirectFileBlock(SOInode * ip, uint32_t fbn);
     static uint32_t grpGetDoubleIndirectFileBlock(SOInode * ip, uint32_t fbn);
 
+    static uint32_t i2FirstValue = N_DIRECT + (N_INDIRECT * RPB);
 
     /* ********************************************************* */
 
@@ -25,7 +26,7 @@ namespace sofs19
         //return binGetFileBlock(ih, fbn);
           SOInode *ip = soGetInodePointer(ih);
             if (fbn < N_DIRECT) return ip -> d[fbn];
-            else if (fbn <N_DIRECT+RPB)
+            else if (fbn < i2FirstValue)
             {
               return grpGetIndirectFileBlock(ip,fbn);
             }
@@ -77,3 +78,4 @@ namespace sofs19
             }
         }
     }
+}
