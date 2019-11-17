@@ -35,8 +35,8 @@ namespace sofs19
 
         //vai a head cache e retira o primeiro elemento que lá está e atualiza o indice
 
-        uint32_t blocknumber = soSB->head_cache.ref[HEAD_CACHE_SIZE];
-        soSB->head_cache.ref[HEAD_CACHE_SIZE]= NullReference;
+        uint32_t blocknumber = soSB->head_cache.ref[soSB->head_cache.idx];
+        soSB->head_cache.ref[soSB->head_cache.idx] = NullReference;
         soSB->dz_free -=1;
         soSB->head_cache.idx +=1;
 
