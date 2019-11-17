@@ -29,7 +29,7 @@ namespace sofs19
         SOSuperBlock* soSB = soGetSuperBlockPointer(); //ponteiro para o superbloco
 
         //Se a head cache esta vazia, chama a replenish
-        if(soSB->head_idx == HEAD_CACHE_SIZE){
+        if(soSB->head_cache.idx == NullReference){
             soReplenishHeadCache();
         }
 
