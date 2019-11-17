@@ -31,7 +31,7 @@ namespace sofs19
 
             dir[i].in = NullReference;
             for (int j = 0; j <= SOFS19_MAX_NAME; j++){
-                dir[i].name[j]='0'; 
+                dir[i].name[j]='\0'; 
             }
         }
 
