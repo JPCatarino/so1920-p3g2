@@ -26,7 +26,7 @@ namespace sofs19
         /* change the following two lines by your code */
         //return binAllocFileBlock(ih, fbn);
 
-        SOInode* iPointer = sofs19::soGetInodePointer(ih);
+        SOInode* iPointer = soGetInodePointer(ih);
         
         uint32_t i2FirstVal =N_INDIRECT * RPB + N_DIRECT;
         uint32_t i2Finish = i2FirstVal + (N_DOUBLE_INDIRECT * (RPB * RPB));
