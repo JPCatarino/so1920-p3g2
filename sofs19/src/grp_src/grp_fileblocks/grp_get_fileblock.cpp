@@ -22,8 +22,6 @@ namespace sofs19
     {
         soProbe(301, "%s(%d, %u)\n", __FUNCTION__, ih, fbn);
 
-        /* change the following line by your code */
-        //return binGetFileBlock(ih, fbn);
           SOInode *ip = soGetInodePointer(ih);
             if (fbn < N_DIRECT) return ip -> d[fbn];
             else if (fbn < i2FirstValue)
@@ -42,9 +40,6 @@ namespace sofs19
     {
         soProbe(301, "%s(%d, ...)\n", __FUNCTION__, afbn);
 
-        /* change the following two lines by your code */
-        //throw SOException(ENOSYS, __FUNCTION__); 
-        //return 0;
         uint32_t ref[RPB];
         if (ip->i1[afbn/RPB] == NullReference)
             {
@@ -62,9 +57,6 @@ namespace sofs19
     {
         soProbe(301, "%s(%d, ...)\n", __FUNCTION__, afbn);
 
-        /* change the following two lines by your code */
-        //throw SOException(ENOSYS, __FUNCTION__); 
-        //return 0;
         uint32_t temp;
         uint32_t ref[RPB];
 
