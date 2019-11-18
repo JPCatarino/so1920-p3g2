@@ -6,7 +6,8 @@
 #include "bin_fileblocks.h"
 
 #include <errno.h>
-
+#include <string.h>
+#include <math.h>
 #include <iostream>
 
 namespace sofs19
@@ -44,12 +45,12 @@ namespace sofs19
         }
 
         //case I1
-        if(fbn>=N_DIRECT && fbn< i2FirstVal){
+        else if(fbn>=N_DIRECT && fbn< i2FirstVal){
             block = grpAllocIndirectFileBlock(iPointer, fbn-N_DIRECT);
         }
 
         //case I2
-        if(fbn >= i2FirstVal && fbn < i2Finish){
+        else if(fbn >= i2FirstVal && fbn < i2Finish){
             block = grpAllocDoubleIndirectFileBlock(iPointer, fbn- i2FirstVal);
         }
 
@@ -71,40 +72,37 @@ namespace sofs19
         //throw SOException(ENOSYS, __FUNCTION__); 
         //return 0;
 
-        uint32_t indirectIndex = (afbn/RPB) % RPB;
-        uint32_t ref = afbn % RPB;
-        uint32_t db[RPB]; //criar um bloco de referencias
-        uint32_t block;
+        uint32_t pos = afbn/RPB;
+        uint32_t i1RefBlock[RPB];
+        uint32_t i1DBlock;
 
         //se a zona indireta está vazia, deve-se criar um bloco e alocar esse bloco na zona indireta
-        if(ip->i1[indirectIndex] == NullReference){
-            block = soAllocDataBlock();
-            for(uint32_t i = 0; i<RPB; i++){
-                db[i] = NullReference;
-            }
-            soWriteDataBlock(block, db);
-            ip->i1[indirectIndex] = block;
-            soReadDataBlock(ip->i1[indirectIndex], &db);
-            block= soAllocDataBlock();
-            db[ref] = block;
-            ip->blkcnt +=2;
-
-        } 
-
-        else{
-            soReadDataBlock(ip->i1[indirectIndex], &db);
-            block= soAllocDataBlock();
-            ip->i1[indirectIndex] = block;
-            ip->blkcnt +=1;
-
+        if (ip->i1[pos]==NullReference){
+            i1DBlock = soAllocDataBlock();
+            ip->blkcnt++;
+            ip->i1[pos]=i1DBlock;
+            memset(&i1RefBlock, NullReference, RPB*sizeof(uint32_t));
+            soWriteDataBlock(i1DBlock, &i1RefBlock);
         }
-        return block;
+        else{
+            i1DBlock=ip->i1[pos];
+            soReadDataBlock(i1DBlock, &i1RefBlock);
+        }
+            
+        // Alocar block em i1
+        uint32_t posI1db = afbn - RPB*pos;
+        uint32_t newDB = soAllocDataBlock();
+        i1RefBlock[posI1db] = newDB;
+        soWriteDataBlock(i1DBlock, &i1RefBlock);
+        ip->blkcnt++;
+
+        return newDB;
     }
 
 
     /* ********************************************************* */
 
-#
+
     /*
     */
     static uint32_t grpAllocDoubleIndirectFileBlock(SOInode * ip, uint32_t afbn)
@@ -115,34 +113,48 @@ namespace sofs19
         //throw SOException(ENOSYS, __FUNCTION__); 
         //return 0;
 
-        uint32_t doubleIndirectIndex = afbn/RPB/RPB;
-        uint32_t db[RPB];
-        uint32_t block;
+        uint32_t i2Pos = afbn/pow(RPB, 2);
+        uint32_t i1DBlock;
+        uint32_t i2RefBlock[RPB];
 
         //se a zona duplamente indireta está vazia, deve-se criar um bloco e alocar esse bloco na zona duplamente indireta
-        if(ip->i2[doubleIndirectIndex] == NullReference){
-            block = soAllocDataBlock();
-            for(uint32_t i = 0; i<RPB; i++){
-                db[i] = NullReference;
-            }
-            soWriteDataBlock(block, db);
-          
-            ip->i2[doubleIndirectIndex] = block;
-            soReadDataBlock(ip->i2[doubleIndirectIndex], &db);
-            block= grpAllocIndirectFileBlock(ip, afbn);            
-            ip->blkcnt +=1;
-
-        } 
-
-        else{
-            soReadDataBlock(ip->i2[doubleIndirectIndex], &db);  
-            block= grpAllocIndirectFileBlock(ip, afbn);
-            
+        if (ip->i2[i2Pos]==NullReference){
+            i1DBlock = soAllocDataBlock();
+            ip->blkcnt++;
+            ip->i2[i2Pos] = i1DBlock;
+            memset(&i2RefBlock, NullReference, RPB*sizeof(uint32_t));
+            soWriteDataBlock(i1DBlock, &i2RefBlock);
         }
-        return block;
+        else{
+            i1DBlock = ip->i2[i2Pos];
+            soReadDataBlock(i1DBlock, &i2RefBlock);
+        }
+            
+        // Alocar bloco em i2
+        uint32_t i1Pos = afbn/RPB - i2Pos*RPB;
+        uint32_t i1RefBlock[RPB];
+        uint32_t blk_refs;
+        if (i2RefBlock[i1Pos] == NullReference){
+            blk_refs = soAllocDataBlock();
+            ip->blkcnt++;
+            i2RefBlock[i1Pos] = blk_refs;
+            memset(&i1RefBlock, NullReference, RPB*sizeof(uint32_t));
+            soWriteDataBlock(blk_refs, &i1RefBlock);
+        }
+        else{
+            blk_refs = i2RefBlock[i1Pos];
+            soReadDataBlock(blk_refs, &i1RefBlock);
+        }
+            
+        // Alocar blk na refs de i2
+        uint32_t i2RefPos = afbn - i2Pos*RPB - i1Pos*RPB;
+        uint32_t newDB = soAllocDataBlock();
+        i1RefBlock[i2RefPos] = newDB;
+        ip->blkcnt++;
+        soWriteDataBlock(blk_refs, &i1RefBlock);
+        soWriteDataBlock(i1DBlock, &i2RefBlock);
 
-
-
+        return newDB;
     }
 
 };
